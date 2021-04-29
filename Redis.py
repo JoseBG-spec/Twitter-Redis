@@ -2,33 +2,26 @@ import redis
 
 subscribers = []
 accounts = redis.Redis(host='localhost', port=6379, db=0)
-fook = True
+
 
 # Generar subscribers de los que ya existan
 if accounts.exists("counter"):
     c = int(accounts.get("counter").decode("utf8"))
     for x in range(c):
-        # print(x)
         subscribers.append(redis.Redis(host='localhost', port=6379, db=0))
         # Registrar el usuario
 else:
-    print("new")
     accounts.set("counter", 1)
     subscribers.append(redis.Redis(host='localhost', port=6379, db=0))
     ponce = {"username": "admin", "password": "pwdsars", "index": 0}
     accounts.hmset("admin", ponce)
     accounts.rpush("listSuscribers", "admin")
 
-def gfg():
-    global fook
-    print("Showing Timeline\n")
-    fook = False
 
 def iniciarSesion(user, passW):
-    global fook
     if user == accounts.hget(user, "username").decode("utf8") and passW == accounts.hget(user, "password").decode(
             "utf8"):
-        print("The information is correct")
+        print("La informacion es correcta")
         tweet = ""
 
         print("Que quieres hacer? 1)Twittear 2)Suscibirse a un canal 3)Ver timeline 4)Cerrar Sesion")
@@ -42,9 +35,8 @@ def iniciarSesion(user, passW):
                 # Subir nuevo tweet (publish en tu channel)
                 print("En que estas pensando?")
                 tweet = input()
-                #subscribers[int(accounts.hget(user, "index").decode("utf8"))].publish(user, tweet)
                 accounts.lpush(user + accounts.hget(user, "index").decode("utf8"), tweet)
-                print("Tweet posted")
+                print("Tweet publicado")
             elif eleccion == 2:
                 counter = 0
                 print("A cual te quieres suscribir? ")
@@ -61,15 +53,14 @@ def iniciarSesion(user, passW):
 
             elif eleccion == 3:
                 for subs in accounts.lrange(user + "_listSuscribers", 0, -1):
-                    print("Tweets from user: "+ subs.decode("utf8"))
+                    print("Tweets del usuario: "+ subs.decode("utf8"))
                     tweets = accounts.llen(subs.decode("utf8") + accounts.hget(subs, "index").decode("utf8"))
                     for tweet in range(tweets):
                         print(accounts.lindex(subs.decode("utf8") + accounts.hget(subs, "index").decode("utf8"), tweet).decode("utf8"))
-                    #ver timeLine (Imprimir la obtencion de = subscriber[index].get_Message()['data'])
             print("Que quieres hacer? 1)Twittear 2)Suscibirse a un canal 3)Ver timeline 4)Salir")
             eleccion = int(input())
     else:
-        print("Information is NOOOOT correct")
+        print("La informacion es incorrecta")
 
 
 user = ""
@@ -85,19 +76,19 @@ while accion != 3:
         print("Contraseña:")
         passW = input()
         temp = {"username": user, "password": passW, "index": len(subscribers)}
-        
-        accounts.hmset(user, temp)
-        accounts.incr("counter")
-
-        accounts.rpush("listSuscribers", user)
-        subscribers.append(redis.Redis(host='localhost', port=6379, db=0))
-
-        iniciarSesion(user, passW)
+        if not accounts.exists(user):
+          accounts.hmset(user, temp)
+          accounts.incr("counter")
+          accounts.rpush("listSuscribers", user)
+          subscribers.append(redis.Redis(host='localhost', port=6379, db=0))
+          iniciarSesion(user, passW)
+        else:
+          print("Ya existe el usuario")
         # TODO crear un nuevo canal en el momento que se crear
     elif accion == 2:
-        print("nombre de usuario:")
+        print("Nombre de usuario:")
         user = input()
-        print("Nueva contraseña:")
+        print("Contraseña:")
         passW = input()
 
         iniciarSesion(user, passW)
